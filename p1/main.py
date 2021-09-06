@@ -2,19 +2,27 @@ import xml.etree.ElementTree as ET
 from os import listdir, rename, mkdir
 from os.path import isfile, join
 import datetime
+import Bimail
+
 import calendar
 
 ag_mapping = dict()
 tour_mapping = dict()
 
 againLines = []
-msg = []
+msgs = []
 inputErrorCount = 0
+
+
+todaySTR = datetime.datetime.today().strftime('%Y-%m-%d')
+auftrag = 0
+recipients = []
 
 
 def readCSV(path):
 
     global inputErrorCount
+    global auftrag
 
     with open(path, 'r') as f:
         lines = f.readlines()
@@ -22,7 +30,7 @@ def readCSV(path):
         for line in lines:
             prnt = True
 
-            tree = ET.parse('p1/p1source.xml')
+            tree = ET.parse('p1source.xml')
             root = tree.getroot()
 
             NK = root.find('NK')
@@ -66,7 +74,7 @@ def readCSV(path):
                 inputErrorCount = inputErrorCount + 1
                 againLines.append(line)
                 text = "Zeile: " + str(inputErrorCount) + " - Konnte AG " + lineElems[6] + " nicht finden"
-                msg.append(text)
+                msgs.append(text)
                 prnt = False
             else:
                 adrag = AK.find('ADR-AG')
@@ -78,14 +86,17 @@ def readCSV(path):
                 absnr.text = ag_mapping[lineElems[6]]
 
         #EMP/Entladestelle
+            #UNGÜLTIG
             if lineElems[5] not in tour_mapping:
                 inputErrorCount = inputErrorCount + 1
                 againLines.append(line)
                 text = "Zeile: " + str(inputErrorCount) + " - Konnte Tour " + lineElems[5] + " nicht finden"
-                msg.append(text)
+                msgs.append(text)
                 prnt = False
             else:
+            #GÜLTIG
                 adremp = SD.find('ADR-EMP')
+                #Z'FUAS
                 if tour_mapping[lineElems[5]][1] == '9999':
                     name = ET.Element('NAME')
                     name.text = tour_mapping[lineElems[5]][2]
@@ -108,6 +119,7 @@ def readCSV(path):
                     hausnr = ET.Element('HAUSNR')
                     hausnr.text = tour_mapping[lineElems[5]][8]
                     adremp.append(hausnr)
+                #HINTERLEGT
                 else:
                     nr = ET.Element('NR')
                     nr.text = tour_mapping[lineElems[5]][1]
@@ -127,12 +139,14 @@ def readCSV(path):
             extnr = AK.find('EXTNR')
             extnr.text = "Tour " + lineElems[5]
 
+        #OUTPUT
             if prnt:
-                tree.write("p1/p1output/out.xml")
+                auftrag = auftrag + 1
+                tree.write("p1/p1output/AT_" + todaySTR + "_" + str(auftrag) + ".xml")
 
 
 def loadAGmapping():
-    with open('p1/p1AGmapping.csv') as f:
+    with open('p1AGmapping.csv') as f:
         lines = f.readlines()
 
         for line in lines:
@@ -140,7 +154,7 @@ def loadAGmapping():
             ag_mapping[l[0]] = l[1]
 
 def loadTourmapping():
-    with open('p1/p1Tourmapping.csv') as f:
+    with open('p1TOURmapping.csv') as f:
         lines = f.readlines()
 
         for line in lines:
@@ -148,19 +162,45 @@ def loadTourmapping():
             # Ganze zeile als value, erster eintrag als key
             tour_mapping[l[0]] = l
 
+def loadRecipients():
+    with open("email.csv", 'r') as f:
+        lines = f.readlines()
+        for l in lines:
+            recipients.append(l.rstrip())
+
+
+    print(recipients)
+
+def handleErrors():
+
+#Schreibe Neue CSV
+    errorFile = "p1/p1output/error_"+todaySTR+".csv"
+
+    with open(errorFile, 'w') as w:
+        w.writelines(againLines)
+        w.close()
+
+    subj = "Jäger Importe"
+    text = "Einige Zeilen konnten nicht importiert werden.<br>Diese Zeilen wurden in der angehängten Datei herausgefiltert - der Rest ist importiert worden.<br><br>Zeile (neue Datei) + Begründung: <br><br>"
+    for msg in msgs:
+        text = text + msg + "<br>\n"
+
+    mymail = Bimail.Bimail(subj, recipients)
+    mymail.htmladd(text)
+    mymail.addattach([errorFile])
+    mymail.send()
+
 def main():
 
     loadAGmapping()
     loadTourmapping()
+    loadRecipients()
 
-    files = [f for f in listdir("p1/p1input") if isfile(join("p1/p1input", f))]
+    files = [f for f in listdir("p1input") if isfile(join("p1input", f))]
     for file in files:
         readCSV("p1/p1input/"+file)
 
-
-
-
-
-
+    if inputErrorCount > 1:
+        handleErrors()
 
 main()

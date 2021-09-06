@@ -13,8 +13,8 @@ class Bimail:
         self.subject = subject
         self.recipients = recipients
         self.htmlbody = ''
-        self.sender = "pdfimport@redertrans.at"
-        self.senderpass = 'Carlo PDF Import Tool'
+        self.sender = "jaegerimport@redertrans.at"
+        self.senderpass = 'Jäger Import Tool'
         self.attachments = []
 
     def send(self):

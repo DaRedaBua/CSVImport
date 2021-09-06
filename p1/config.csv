@@ -1,0 +1,7 @@
+email;f.reder@redertrans.at;it.redertrans.at;
+inputPath;input;1;
+outPutPath;output;1;
+errOutPath;error;1;
+AGmapping;AGmapping.csv;
+TourMapping;TOURmapping.csv;
+sourceXML;source.xml;

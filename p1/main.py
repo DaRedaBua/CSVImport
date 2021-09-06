@@ -3,8 +3,8 @@ from os import listdir, rename, mkdir
 from os.path import isfile, join
 import datetime
 import Bimail
-
 import calendar
+from pathlib import Path
 
 ag_mapping = dict()
 tour_mapping = dict()
@@ -13,11 +13,16 @@ againLines = []
 msgs = []
 inputErrorCount = 0
 
-
 todaySTR = datetime.datetime.today().strftime('%Y-%m-%d')
 auftrag = 0
 recipients = []
 
+outFolder = ""
+inFolder = ""
+errFolder = ""
+AgMappingPath = ""
+TourMappingPath = ""
+sourcePath = ""
 
 def readCSV(path):
 
@@ -30,7 +35,7 @@ def readCSV(path):
         for line in lines:
             prnt = True
 
-            tree = ET.parse('p1source.xml')
+            tree = ET.parse(sourcePath)
             root = tree.getroot()
 
             NK = root.find('NK')
@@ -73,7 +78,7 @@ def readCSV(path):
             if lineElems[6] not in ag_mapping:
                 inputErrorCount = inputErrorCount + 1
                 againLines.append(line)
-                text = "Zeile: " + str(inputErrorCount) + " - Konnte AG " + lineElems[6] + " nicht finden"
+                text = "Zeile: " + str(inputErrorCount) + " - Konnte Auftraggeber " + lineElems[6] + " nicht finden"
                 msgs.append(text)
                 prnt = False
             else:
@@ -142,11 +147,60 @@ def readCSV(path):
         #OUTPUT
             if prnt:
                 auftrag = auftrag + 1
-                tree.write("p1/p1output/AT_" + todaySTR + "_" + str(auftrag) + ".xml")
+                tree.write(outFolder + "/AT_" + todaySTR + "_" + str(auftrag) + ".xml")
+
+
+def loadConfig():
+
+    global recipients
+    global inFolder
+    global outFolder
+    global errFolder
+    global AgMappingPath
+    global TourMappingPath
+    global sourcePath
+
+    with open('config.csv', 'r') as f:
+        lines = f.readlines()
+        print(lines)
+        for x in range(len(lines)):
+            lineElems = lines[x].split(';')
+
+            print(x)
+            print(lineElems)
+
+            if x == 0:
+                for y in range(1, len(lineElems)):
+                    recipients.append(lineElems[y])
+
+            if x == 1:
+                if lineElems[2] == '1':
+                    Path(lineElems[1]).mkdir(parents=True, exist_ok=True)
+                inFolder = lineElems[1]
+
+
+            if x == 2:
+                if lineElems[2] == '1':
+                    Path(lineElems[1]).mkdir(parents=True, exist_ok=True)
+                outFolder = lineElems[1]
+
+            if x == 3:
+                if lineElems[2] == '1':
+                    Path(lineElems[1]).mkdir(parents=True, exist_ok=True)
+                errFolder = lineElems[1]
+
+            if x == 4:
+                AgMappingPath = lineElems[1]
+
+            if x == 5:
+                TourMappingPath = lineElems[1]
+
+            if x == 6:
+                sourcePath = lineElems[1]
 
 
 def loadAGmapping():
-    with open('p1AGmapping.csv') as f:
+    with open(AgMappingPath, 'r') as f:
         lines = f.readlines()
 
         for line in lines:
@@ -154,7 +208,7 @@ def loadAGmapping():
             ag_mapping[l[0]] = l[1]
 
 def loadTourmapping():
-    with open('p1TOURmapping.csv') as f:
+    with open(TourMappingPath, 'r') as f:
         lines = f.readlines()
 
         for line in lines:
@@ -162,19 +216,10 @@ def loadTourmapping():
             # Ganze zeile als value, erster eintrag als key
             tour_mapping[l[0]] = l
 
-def loadRecipients():
-    with open("email.csv", 'r') as f:
-        lines = f.readlines()
-        for l in lines:
-            recipients.append(l.rstrip())
-
-
-    print(recipients)
-
 def handleErrors():
 
 #Schreibe Neue CSV
-    errorFile = "p1/p1output/error_"+todaySTR+".csv"
+    errorFile = errFolder+"/"+todaySTR+".csv"
 
     with open(errorFile, 'w') as w:
         w.writelines(againLines)
@@ -192,13 +237,13 @@ def handleErrors():
 
 def main():
 
+    loadConfig()
     loadAGmapping()
     loadTourmapping()
-    loadRecipients()
 
-    files = [f for f in listdir("p1input") if isfile(join("p1input", f))]
+    files = [f for f in listdir(inFolder) if isfile(join(inFolder, f))]
     for file in files:
-        readCSV("p1/p1input/"+file)
+        readCSV(inFolder+"/"+file)
 
     if inputErrorCount > 1:
         handleErrors()

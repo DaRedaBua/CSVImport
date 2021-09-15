@@ -4,6 +4,8 @@ from os.path import isfile, join
 import datetime
 import Bimail
 import calendar
+import log
+from log import log, loadLogs, getStackTrace, getAllTrace
 from pathlib import Path
 
 ag_mapping = dict()
@@ -13,7 +15,7 @@ againLines = []
 msgs = []
 inputErrorCount = 0
 
-todaySTR = datetime.datetime.today().strftime('%Y-%m-%d')
+todaySTR = datetime.datetime.now().strftime('%Y-%m-%d_%f')[:-3]
 auftrag = 0
 recipients = []
 
@@ -25,6 +27,7 @@ TourMappingPath = ""
 sourcePath = ""
 
 def readCSV(path):
+    log(400, "readCSV(path) - path:", path)
 
     global inputErrorCount
     global auftrag
@@ -151,6 +154,7 @@ def readCSV(path):
 
 
 def loadConfig():
+    log(100, "loadConfig() - ", "opening ./config.csv")
 
     global recipients
     global inFolder
@@ -164,78 +168,119 @@ def loadConfig():
         lines = f.readlines()
         print(lines)
         for x in range(len(lines)):
-            lineElems = lines[x].split(';')
+            log(105, "Config-Line: ", x)
 
-            print(x)
-            print(lineElems)
+            lineElems = lines[x].split(';')
+            log(106, "Line-Elems: ", lineElems)
 
             if x == 0:
                 for y in range(1, len(lineElems)):
+                    log(110, "recipients.append(lineElem)", lineElems[y])
                     recipients.append(lineElems[y])
 
             if x == 1:
                 if lineElems[2] == '1':
+                    log(115, "Creating inFolder", "")
                     Path(lineElems[1]).mkdir(parents=True, exist_ok=True)
+                log(116, "inFolder: ", lineElems[1])
                 inFolder = lineElems[1]
 
 
             if x == 2:
                 if lineElems[2] == '1':
+                    log(120, "Creating outFolder", "")
                     Path(lineElems[1]).mkdir(parents=True, exist_ok=True)
+                log(121, "outFolder: ", lineElems[1])
                 outFolder = lineElems[1]
 
             if x == 3:
                 if lineElems[2] == '1':
+                    log(125, "Creating errFolder", "")
                     Path(lineElems[1]).mkdir(parents=True, exist_ok=True)
+                log(126, "errFolder: ", lineElems[1])
                 errFolder = lineElems[1]
 
             if x == 4:
+                log(130, "AgMappingPath: ", lineElems[1])
                 AgMappingPath = lineElems[1]
 
             if x == 5:
+                log(135, "TourMappingPath: ", lineElems[1])
                 TourMappingPath = lineElems[1]
 
             if x == 6:
+                log(140, "sourcePath: ", lineElems[1])
                 sourcePath = lineElems[1]
 
 
 def loadAGmapping():
+    log(200, "loadAGmapping()", "")
     with open(AgMappingPath, 'r') as f:
         lines = f.readlines()
 
         for line in lines:
+            log(205, "line: ", line)
             l = line.split(';')
             ag_mapping[l[0]] = l[1]
+            log(210, "ag_mapping Key/Value: ", l[0] + " - " + l[1])
+
+    log(290, "ag_mapping: ", ag_mapping)
+
 
 def loadTourmapping():
+    log(300, "loadTourmapping()", "")
     with open(TourMappingPath, 'r') as f:
         lines = f.readlines()
 
         for line in lines:
+            log(305, "line: ", line)
             l = line.split(';')
             # Ganze zeile als value, erster eintrag als key
             tour_mapping[l[0]] = l
+            log(310, "tour_mapping Key/Value: ", l[0] + " - " + l[1])
+
+    log(390, "tour_mapping: ", tour_mapping)
+
 
 def handleErrors():
-
 #Schreibe Neue CSV
-    errorFile = errFolder+"/"+todaySTR+".csv"
+    errorFile = errFolder+"/err"+todaySTR+".csv"
+#Schicke StackTrace und AllTrace mit
+    stackFile = errFolder+"/stacktrace_"+todaySTR+".txt"
+    allFile = errFolder+"/alltrace_"+todaySTR+".txt"
 
     with open(errorFile, 'w') as w:
         w.writelines(againLines)
         w.close()
 
+    with open(stackFile, 'w') as w:
+        w.write(getStackTrace())
+        w.close()
+
+    with open(allFile, 'w') as w:
+        w.write(getAllTrace())
+        w.close()
+
     subj = "Jäger Importe"
-    text = "Einige Zeilen konnten nicht importiert werden.<br>Diese Zeilen wurden in der angehängten Datei herausgefiltert - der Rest ist importiert worden.<br><br>Zeile (neue Datei) + Begründung: <br><br>"
+    if inputErrorCount > 0:
+        text = "Einige Zeilen konnten nicht importiert werden.<br>Diese Zeilen wurden in der angehängten Datei herausgefiltert - der Rest ist importiert worden.<br><br>Zeile <b>(der neuen Datei)</b> + Begründung: <br><br>"
+
+    else:
+        text = "Umwandlung in XML erfolgreich!"
+
     for msg in msgs:
         text = text + msg + "<br>\n"
 
     mymail = Bimail.Bimail(subj, recipients)
     mymail.htmladd(text)
-    mymail.addattach([errorFile])
+    mymail.addattach([errorFile, stackFile, allFile])
     mymail.send()
 
+
 def main():
+    loadLogs("logs.csv")
+
+    log("000", "Programm startet", "")
 
     loadConfig()
     loadAGmapping()
@@ -243,9 +288,10 @@ def main():
 
     files = [f for f in listdir(inFolder) if isfile(join(inFolder, f))]
     for file in files:
+        log("010", "Öffne CSV: ", file)
         readCSV(inFolder+"/"+file)
 
-    if inputErrorCount > 1:
+
         handleErrors()
 
 main()

@@ -1,11 +1,9 @@
 HEADER;9999;NAME;ORT1;LAND;ISOLAND;PLZ;STRASSE;HAUSNR
-80;1;;;;;;;;
-81;9999;Mi gibt's ned GmbH;Buxtehude;Deutschland;DEU;90210;Schwindelgasse;69;
-82;2;;;;;;;;
-83;3;;;;;;;;
-84;4;;;;;;;;
-85;5;;;;;;;;
-86;6;;;;;;;;
-87;7;;;;;;;;
-88;8;;;;;;;;
-89;9;;;;;;;;
+80;9999;Tour 80 - Übergabestelle Kollerschlag/Wegscheid;Wegscheid;Deutschland;DEU;94110;Marktstraße;99;
+81;9999;Tour 81 - Übergabestelle Kollerschlag/Wegscheid;Wegscheid;Deutschland;DEU;94110;Marktstraße;99;
+82;9999;Tour 82 - Übergabestelle Kollerschlag/Wegscheid;Wegscheid;Deutschland;DEU;94110;Marktstraße;99;
+83;9999;Tour 83 - Übergabestelle Kollerschlag/Wegscheid;Wegscheid;Deutschland;DEU;94110;Marktstraße;99;
+86;9999;Tour 86 - Übergabestelle Braunau/Simbach;Simbach;Deutschland;DEU;84359;Innstraße;65;
+87;9999;Tour 87 - Übergabestelle Braunau/Simbach;Simbach;Deutschland;DEU;84359;Innstraße;65;
+88;9999;Tour 88 - Übergabestelle Braunau/Simbach;Simbach;Deutschland;DEU;84359;Innstraße;65;
+89;9999;Tour 89 - Übergabestelle Braunau/Simbach;Simbach;Deutschland;DEU;84359;Innstraße;65;

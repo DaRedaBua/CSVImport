@@ -7,6 +7,7 @@ import calendar
 import log
 from log import log, loadLogs, getStackTrace, getAllTrace
 from pathlib import Path
+import codecs
 
 ag_mapping = dict()
 tour_mapping = dict()
@@ -36,6 +37,7 @@ def readCSV(path):
         lines = f.readlines()
 
         for line in lines:
+            log(405, "line: ", line)
             prnt = True
 
             tree = ET.parse(sourcePath)
@@ -48,7 +50,7 @@ def readCSV(path):
             RSTK = SD.find('RSTK')
 
             lineElems = line.split(";")
-
+            log(410, "lineElems: ", lineElems)
         #Datums
             dat = lineElems[1]
             if len(lineElems[0]) < 2:
@@ -58,6 +60,9 @@ def readCSV(path):
             #erster, letzter
             fom = dat + "01"
             lom = dat + str(calendar.monthrange(int(lineElems[1]), int(lineElems[0]))[1])
+
+            log(415, "FirstOfMonth: ", fom)
+            log(416, "LasstOfMonth: ", lom)
 
             nkdatum = NK.find('NKDATUM')
             nkdatum.text = fom
@@ -79,12 +84,14 @@ def readCSV(path):
 
         #AG/ABS
             if lineElems[6] not in ag_mapping:
+                log(425, "AG " + lineElems[6] + " nicht in AGmapping gefunden, prnt: ", False)
                 inputErrorCount = inputErrorCount + 1
                 againLines.append(line)
                 text = "Zeile: " + str(inputErrorCount) + " - Konnte Auftraggeber " + lineElems[6] + " nicht finden"
                 msgs.append(text)
                 prnt = False
             else:
+                log(426, "AG-Mapping <ADR-AG>,<ADR-ABS> : key,value", lineElems[6] + " : " + ag_mapping[lineElems[6]])
                 adrag = AK.find('ADR-AG')
                 agnr = adrag.find('NR')
                 agnr.text = ag_mapping[lineElems[6]]
@@ -93,45 +100,60 @@ def readCSV(path):
                 absnr = adrabs.find('NR')
                 absnr.text = ag_mapping[lineElems[6]]
 
+
         #EMP/Entladestelle
+            #Prnt wird zweimal abgefragt WEIL wenn prnt bereits FALSE wird sowieso nicht gedruckt.
+            #Bei UNGÜLTIG wird verhindert, dass die Zeile ein zweites mal hinzugefügt wird,
+            #bei GÜLTIG wird verhindert, dass obwohl ERROR danach gesucht wird
             #UNGÜLTIG
-            if lineElems[5] not in tour_mapping:
+            if lineElems[5] not in tour_mapping and prnt:
+                log(435, "Tour " + lineElems[5] + " nicht in Tourmapping gefunden, prnt: ", False)
                 inputErrorCount = inputErrorCount + 1
                 againLines.append(line)
                 text = "Zeile: " + str(inputErrorCount) + " - Konnte Tour " + lineElems[5] + " nicht finden"
                 msgs.append(text)
                 prnt = False
-            else:
+            elif prnt:
             #GÜLTIG
                 adremp = SD.find('ADR-EMP')
                 #Z'FUAS
                 if tour_mapping[lineElems[5]][1] == '9999':
-                    name = ET.Element('NAME')
+                    log(440, "Tour Z'Fuas eingeben", "")
+                    name = ET.Element('NAME1')
                     name.text = tour_mapping[lineElems[5]][2]
                     adremp.append(name)
+                    log(441, "<NAME1>: ", name)
                     ort = ET.Element('ORT1')
                     ort.text = tour_mapping[lineElems[5]][3]
                     adremp.append(ort)
+                    log(442, "<ORT1>: ", ort)
                     land = ET.Element('LAND')
                     land.text = tour_mapping[lineElems[5]][4]
                     adremp.append(land)
+                    log(443, "<LAND>: ", land)
                     isoland = ET.Element('ISOLAND')
                     isoland.text = tour_mapping[lineElems[5]][5]
                     adremp.append(isoland)
+                    log(444, "<ISOLAND>: ", isoland)
                     plz = ET.Element('PLZ')
                     plz.text = tour_mapping[lineElems[5]][6]
                     adremp.append(plz)
+                    log(445, "<PLZ>: ", plz)
                     strasse = ET.Element('STRASSE')
                     strasse.text = tour_mapping[lineElems[5]][7]
                     adremp.append(strasse)
+                    log(446, "<STRASSE>: ", strasse)
                     hausnr = ET.Element('HAUSNR')
                     hausnr.text = tour_mapping[lineElems[5]][8]
                     adremp.append(hausnr)
+                    log(447, "<HAUSNR>: ", hausnr)
                 #HINTERLEGT
                 else:
+                    log(450, "Adresse in Carlo Mapping gefunden", "")
                     nr = ET.Element('NR')
                     nr.text = tour_mapping[lineElems[5]][1]
                     adremp.append(nr)
+                    log(451, "CarLo-GP-NR:", nr)
 
         #GEWICHT
             PO = SD.find('PO')
@@ -142,16 +164,20 @@ def readCSV(path):
             ugewicht.text = lineElems[7]
             fgewicht = POFD.find('FGEWICHT')
             fgewicht.text = lineElems[7]
+            log(460, "<T/F/U-Gewicht>: ", lineElems[7])
 
         #EXTNR
             extnr = AK.find('EXTNR')
             extnr.text = "Tour " + lineElems[5]
+            log(470, "<EXTNR>: ", lineElems[5])
 
         #OUTPUT
             if prnt:
+                log(495, "Schreibe in Baum...", "")
                 auftrag = auftrag + 1
-                tree.write(outFolder + "/AT_" + todaySTR + "_" + str(auftrag) + ".xml")
-
+                file = outFolder + "/AT_" + todaySTR + "_" + str(auftrag) + ".xml"
+                tree.write(file)
+                log(496, "ERFOLG, Datei: ", file)
 
 def loadConfig():
     log(100, "loadConfig() - ", "opening ./config.csv")
@@ -243,11 +269,19 @@ def loadTourmapping():
 
 
 def handleErrors():
+    log(500, "handleErrors()", "")
+
 #Schreibe Neue CSV
     errorFile = errFolder+"/err"+todaySTR+".csv"
 #Schicke StackTrace und AllTrace mit
     stackFile = errFolder+"/stacktrace_"+todaySTR+".txt"
     allFile = errFolder+"/alltrace_"+todaySTR+".txt"
+
+    log(501, "errorFile: ", errorFile)
+    log(502, "stackFile: ", stackFile)
+    log(503, "allFile: ", allFile)
+
+    log(599, "log hört hier auf - SendeMail...", "")
 
     with open(errorFile, 'w') as w:
         w.writelines(againLines)
@@ -291,7 +325,6 @@ def main():
         log("010", "Öffne CSV: ", file)
         readCSV(inFolder+"/"+file)
 
-
-        handleErrors()
+    handleErrors()
 
 main()

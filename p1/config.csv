@@ -1,7 +1,7 @@
-email;f.reder@redertrans.at;it.redertrans.at;
-inputPath;input;1;
-outPutPath;output;1;
-errOutPath;error;1;
-AGmapping;AGmapping.csv;
-TourMapping;TOURmapping.csv;
-sourceXML;source.xml;
+email;f.reder@redertrans.at;
+inputPath;//10.0.0.16/09_MilchImport/02_Tool/01_Input;1;
+outPutPath;//10.0.0.16/09_MilchImport/03_2107/01_Input;1;
+errOutPath;//10.0.0.16/09_MilchImport/02_Tool/03_Error;1;
+AGmapping;//10.0.0.16/09_MilchImport/02_Tool/AGmapping.csv;
+TourMapping;//10.0.0.16/09_MilchImport/02_Tool/TOURmapping.csv;
+sourceXML;//10.0.0.16/09_MilchImport/02_Tool/source.xml;

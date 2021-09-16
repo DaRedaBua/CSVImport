@@ -101,7 +101,7 @@ def readCSV(path):
                 absnr.text = ag_mapping[lineElems[6]]
 
 
-        #EMP/Entladestelle
+        #EMP/Entladestelle + INFO
             #Prnt wird zweimal abgefragt WEIL wenn prnt bereits FALSE wird sowieso nicht gedruckt.
             #Bei UNGÜLTIG wird verhindert, dass die Zeile ein zweites mal hinzugefügt wird,
             #bei GÜLTIG wird verhindert, dass obwohl ERROR danach gesucht wird
@@ -114,7 +114,7 @@ def readCSV(path):
                 msgs.append(text)
                 prnt = False
             elif prnt:
-            #GÜLTIG
+                #GÜLTIG
                 adremp = SD.find('ADR-EMP')
                 #Z'FUAS
                 if tour_mapping[lineElems[5]][1] == '9999':
@@ -147,6 +147,14 @@ def readCSV(path):
                     hausnr.text = tour_mapping[lineElems[5]][8]
                     adremp.append(hausnr)
                     log(447, "<HAUSNR>: ", hausnr)
+                #INFO
+                    info = SD.find('INFO')
+                    print(info)
+                    info1 = info.find('INFO1')
+                    print(info1)
+
+                    info1.text = tour_mapping[lineElems[5]][2]
+                    log(448, "<INFO1>: ", lineElems[5])
                 #HINTERLEGT
                 else:
                     log(450, "Adresse in Carlo Mapping gefunden", "")

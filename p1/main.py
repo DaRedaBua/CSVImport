@@ -1,5 +1,7 @@
+#v1.0.2
+
 import xml.etree.ElementTree as ET
-from os import listdir, rename, mkdir
+from os import listdir, rename
 from os.path import isfile, join
 import datetime
 import Bimail
@@ -23,6 +25,7 @@ recipients = []
 outFolder = ""
 inFolder = ""
 errFolder = ""
+backupFolder = ""
 AgMappingPath = ""
 TourMappingPath = ""
 sourcePath = ""
@@ -187,6 +190,7 @@ def readCSV(path):
                 tree.write(file)
                 log(496, "ERFOLG, Datei: ", file)
 
+
 def loadConfig():
     log(100, "loadConfig() - ", "opening ./config.csv")
 
@@ -194,6 +198,7 @@ def loadConfig():
     global inFolder
     global outFolder
     global errFolder
+    global backupFolder
     global AgMappingPath
     global TourMappingPath
     global sourcePath
@@ -235,14 +240,21 @@ def loadConfig():
                 errFolder = lineElems[1]
 
             if x == 4:
+                if lineElems[2] == '1':
+                    log(125, "Creating backupFolder", "")
+                    Path(lineElems[1]).mkdir(parents=True, exist_ok=True)
+                log(126, "baclupFolderFolder: ", lineElems[1])
+                backupFolder = lineElems[1]
+
+            if x == 5:
                 log(130, "AgMappingPath: ", lineElems[1])
                 AgMappingPath = lineElems[1]
 
-            if x == 5:
+            if x == 6:
                 log(135, "TourMappingPath: ", lineElems[1])
                 TourMappingPath = lineElems[1]
 
-            if x == 6:
+            if x == 7:
                 log(140, "sourcePath: ", lineElems[1])
                 sourcePath = lineElems[1]
 
@@ -332,6 +344,7 @@ def main():
     for file in files:
         log("010", "Öffne CSV: ", file)
         readCSV(inFolder+"/"+file)
+        rename(inFolder+"/"+file, backupFolder+"/"+file)
 
     handleErrors()
 
